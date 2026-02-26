@@ -47,13 +47,6 @@ Evaluation is done both:
 - Quantitatively using ROUGE (rouge1/rouge2/rougeL/rougeLsum)
 - Qualitatively via side-by-side comparison of generated summaries vs human references
 
-
-**Dataset & Model**
-
-- Dataset: `knkarthick/dialogsum` (DialogSum)
-- Backbone model: `google/flan-t5-base` (Seq2Seq)
-
-
 Environment Setup
 
 Install the required packages (same versions used in the notebook):
@@ -76,6 +69,80 @@ rouge.compute(
     use_stemmer=True
 )
 ```
+
+
+**Dataset & Model**
+
+- Dataset: `knkarthick/dialogsum` (DialogSum)
+- Backbone model: `google/flan-t5-base` (Seq2Seq)
+
+```
+# Zero-Shot Baseline
+index = 200
+
+dialogue = dataset['test'][index]['dialogue']
+summary = dataset['test'][index]['summary']
+
+prompt = f"""
+Summarize the following conversation.
+
+{dialogue}
+
+Summary:
+"""
+
+inputs = tokenizer(prompt, return_tensors='pt')
+output = tokenizer.decode(
+    original_model.generate(
+        inputs["input_ids"], 
+        max_new_tokens=200,
+    )[0], 
+    skip_special_tokens=True
+)
+
+# Full Fine-tuning
+output_dir = f'./dialogue-summary-training-{str(int(time.time()))}'
+
+training_args = TrainingArguments(
+    output_dir=output_dir,
+    learning_rate=1e-5,
+    num_train_epochs=1,
+    weight_decay=0.01,
+    logging_steps=1,
+    max_steps=1
+)
+
+trainer = Trainer(
+    model=original_model,
+    args=training_args,
+    train_dataset=tokenized_datasets['train'],
+    eval_dataset=tokenized_datasets['validation']
+)
+
+# PEFT\LoRA Model for fine-tuning
+peft_model = get_peft_model(original_model, 
+                            lora_config)
+print(print_number_of_trainable_model_parameters(peft_model))
+
+output_dir = f'./peft-dialogue-summary-training-{str(int(time.time()))}'
+
+peft_training_args = TrainingArguments(
+    output_dir=output_dir,
+    auto_find_batch_size=True,
+    learning_rate=1e-3, # Higher learning rate than full fine-tuning.
+    num_train_epochs=1,
+    logging_steps=1,
+    max_steps=1    
+)
+    
+peft_trainer = Trainer(
+    model=peft_model,
+    args=peft_training_args,
+    train_dataset=tokenized_datasets["train"],
+)
+
+```
+
 
 # Results
 | Model                | ROUGE-1    | ROUGE-2    | ROUGE-L    | ROUGE-Lsum |
