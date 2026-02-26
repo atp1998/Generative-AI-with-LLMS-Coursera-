@@ -73,7 +73,7 @@ rouge.compute(
     references=...,
     use_aggregator=True,
     use_stemmer=True
-)
+)```
 
 # Results
 | Model                | ROUGE-1    | ROUGE-2    | ROUGE-L    | ROUGE-Lsum |
