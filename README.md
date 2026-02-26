@@ -156,3 +156,142 @@ peft_trainer = Trainer(
 | Full FT | +18.82 pp | +10.43 pp | +13.70 pp |
 | PEFT    | +17.47 pp | +8.73 pp  | +12.36 pp |
 
+
+**Week 3 - RLHF & LLM Alignment**
+
+Detoxifying Dialogue Summaries using PPO (Reinforcement Learning)
+
+This notebook demonstrates an end-to-end workflow to align a pretrained dialogue summarization model toward generating **less toxic outputs** using reinforcement learning.
+
+Instead of supervised fine-tuning, we optimize a policy model using:
+
+1) **Policy model** (PEFT-adapted FLAN-T5)  
+2) **Reward model** (Hate Speech RoBERTa classifier)  
+3) **Proximal Policy Optimization (PPO)**  
+
+The goal is to reduce toxic language in generated summaries while preserving summarization quality.
+
+Evaluation is conducted using:
+
+- **Reward model scores** (toxicity reduction)
+- **PPO training metrics** (KL divergence, returns, advantages)
+- **Qualitative comparison** (before vs after PPO)
+
+Environment Setup
+
+Install the required packages:
+
+```bash
+# Install dependencies
+pip install -U \
+  datasets \
+  transformers \
+  accelerate \
+  peft \
+  trl \
+  torch
+```
+
+
+# Build PPO-ready dataset (add required "query" field)
+```
+def build_dataset(model_name, dataset_name):
+
+    dataset = load_dataset(dataset_name, split="train")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    def tokenize(sample):
+
+        prompt = f"""
+Summarize the following conversation.
+
+{sample["dialogue"]}
+
+Summary:
+"""
+
+        sample["input_ids"] = tokenizer.encode(prompt)
+
+        # Required by PPOTrainer
+        sample["query"] = tokenizer.decode(sample["input_ids"])
+        return sample
+
+    dataset = dataset.map(tokenize)
+    dataset.set_format(type="torch")
+    return dataset
+
+# Build PPO-ready dataset (add required "query" field)
+def build_dataset(model_name, dataset_name):
+
+    dataset = load_dataset(dataset_name, split="train")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    def tokenize(sample):
+
+        prompt = f"""
+Summarize the following conversation.
+
+{sample["dialogue"]}
+
+Summary:
+"""
+
+        sample["input_ids"] = tokenizer.encode(prompt)
+
+        # Required by PPOTrainer
+        sample["query"] = tokenizer.decode(sample["input_ids"])
+        return sample
+
+    dataset = dataset.map(tokenize)
+    dataset.set_format(type="torch")
+    return dataset
+
+# Initialize PPO Trainer
+ppo_trainer = PPOTrainer(
+    model=policy_model,
+    ref_model=reference_model,
+    tokenizer=tokenizer,
+    dataset=dataset,
+    data_collator=collator,
+)
+
+# PPO Fine-Tuning Loop
+
+for batch in ppo_trainer.dataloader:
+
+    query_tensors = batch["input_ids"]
+
+    # 1️⃣ Generate summaries from policy model
+    response_tensors = ppo_trainer.generate(query_tensors)
+    response_texts = tokenizer.batch_decode(
+        response_tensors,
+        skip_special_tokens=True
+    )
+
+    # 2️⃣ Compute reward using toxicity classifier
+    rewards = reward_model(response_texts)
+
+    # 3️⃣ PPO update step
+    stats = ppo_trainer.step(
+        query_tensors,
+        response_tensors,
+        rewards
+    )
+```
+
+**Results**
+| Metric                     | Desired Trend | Interpretation            |
+| -------------------------- | ------------- | ------------------------- |
+| objective/kl               | Controlled ↓  | Stable policy updates     |
+| ppo/returns/mean           | Increasing ↑  | Improved detox reward     |
+| ppo/policy/advantages_mean | Positive ↑    | Effective learning signal |
+
+**Findings**
+
+| Stage      | Toxicity Level | Observation                        |
+| ---------- | -------------- | ---------------------------------- |
+| Before PPO | Higher         | Toxic or biased phrases may appear |
+| After PPO  | Lower          | Language becomes more neutral      |
+
+
+
