@@ -58,7 +58,7 @@ Environment Setup
 
 Install the required packages (same versions used in the notebook):
 
-```bash
+bash
 pip install -U \
   datasets==2.17.0 \
   transformers==4.38.2 \
@@ -73,7 +73,7 @@ rouge.compute(
     references=...,
     use_aggregator=True,
     use_stemmer=True
-)```
+)
 
 # Results
 | Model                | ROUGE-1    | ROUGE-2    | ROUGE-L    | ROUGE-Lsum |
