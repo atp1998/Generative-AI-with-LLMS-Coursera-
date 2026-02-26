@@ -58,7 +58,6 @@ Environment Setup
 
 Install the required packages (same versions used in the notebook):
 
-bash
 pip install -U \
   datasets==2.17.0 \
   transformers==4.38.2 \
@@ -66,11 +65,10 @@ pip install -U \
   evaluate==0.4.0 \
   rouge_score==0.1.2 \
   peft==0.3.0
-
-Evaluation Using ROUGE
+  
 rouge.compute(
-    predictions=...,
-    references=...,
+    predictions=predictions,
+    references=references,
     use_aggregator=True,
     use_stemmer=True
 )
