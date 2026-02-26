@@ -48,7 +48,7 @@ Evaluation is done both:
 - Qualitatively via side-by-side comparison of generated summaries vs human references
 
 
-#Dataset & Model
+# Dataset & Model
 
 - Dataset: `knkarthick/dialogsum` (DialogSum)
 - Backbone model: `google/flan-t5-base` (Seq2Seq)
@@ -75,8 +75,4 @@ rouge.compute(
     use_stemmer=True
 )
 
-| Model                | ROUGE-1    | ROUGE-2    | ROUGE-L    | ROUGE-Lsum |
-| -------------------- | ---------- | ---------- | ---------- | ---------- |
-| Original (Zero-shot) | 0.2334     | 0.0760     | 0.2015     | 0.2015     |
-| Full Fine-Tuning     | **0.4216** | **0.1804** | **0.3384** | **0.3384** |
-| PEFT (LoRA)          | 0.4081     | 0.1633     | 0.3251     | 0.3249     |
+# Results 
