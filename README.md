@@ -58,6 +58,7 @@ Environment Setup
 
 Install the required packages (same versions used in the notebook):
 
+</> Bash
 pip install -U \
   datasets==2.17.0 \
   transformers==4.38.2 \
