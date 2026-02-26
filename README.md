@@ -59,6 +59,7 @@ Environment Setup
 Install the required packages (same versions used in the notebook):
 
 ```
+# Install dependencies
 pip install -U \
   datasets==2.17.0 \
   transformers==4.38.2 \
@@ -66,13 +67,15 @@ pip install -U \
   evaluate==0.4.0 \
   rouge_score==0.1.2 \
   peft==0.3.0
-  
+
+# Evaluation using ROUGE
 rouge.compute(
     predictions=predictions,
     references=references,
     use_aggregator=True,
     use_stemmer=True
 )
+```
 
 # Results
 | Model                | ROUGE-1    | ROUGE-2    | ROUGE-L    | ROUGE-Lsum |
